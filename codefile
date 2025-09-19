@@ -1,0 +1,36 @@
+import streamlit as st
+from ultralytics import YOLO
+from PIL import Image
+
+model = YOLO("yolov8s.pt")
+
+st.title("Object Detection and Recognition")
+st.write("Using **YOLOv8 Pre-trained Model**")
+
+uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    file_path = "uploaded_image.jpg"
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    results = model(file_path)
+
+    st.subheader("Uploaded Image")
+    st.image(Image.open(file_path), caption="Original", use_container_width=True)
+
+    st.subheader("Detection Result")
+    for r in results:
+        annotated_img = r.plot()
+        st.image(annotated_img, caption="Detected Objects", use_container_width=True)
+
+    st.subheader("Recognized Objects")
+    labels = results[0].boxes.cls.cpu().numpy()
+    names = [model.names[int(i)] for i in labels]
+    st.write("Detected:", ", ".join(names))
+
+    confidences = results[0].boxes.conf.cpu().numpy()
+    for obj, conf in zip(names, confidences):
+        st.write(f"{obj}: {conf*100:.2f}% confidence")
+
+st.info("Upload any image (e.g., with people, cars, animals) to test object detection.")
